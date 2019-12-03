@@ -2,14 +2,11 @@
 #
 
 define ipmi::snmp (
-  $snmp = 'public',
-  $lan_channel = 1,
+  String  $snmp        = 'public',
+  Integer $lan_channel = 1,
 )
 {
   require ::ipmi
-
-  validate_string($snmp)
-  validate_integer($lan_channel)
 
   exec { "ipmi_set_snmp_${lan_channel}":
     command => "/usr/bin/ipmitool lan set ${lan_channel} snmp ${snmp}",

@@ -1,7 +1,5 @@
 # == Class: ipmi::config
 #
-# This class should be considered private.
-#
 class ipmi::config {
 
   $watchdog_real = $::ipmi::watchdog ? {

@@ -1,23 +1,13 @@
 # == Class: ipmi
 #
-# Please refer to https://github.com/jhoblitt/puppet-ipmi#usage for
-# parameter documentation.
-#
 class ipmi (
-  $service_ensure         = 'running',
-  $ipmievd_service_ensure = 'stopped',
-  $watchdog               = false,
-  $snmps                  = {},
-  $users                  = {},
-  $networks               = {},
+  Enum['running','stopped'] $service_ensure         = 'running',
+  Enum['running','stopped'] $ipmievd_service_ensure = 'stopped',
+  Boolean                   $watchdog               = false,
+  Hash                      $snmps                  = {},
+  Hash                      $users                  = {},
+  Hash                      $networks               = {},
 ) inherits ipmi::params {
-  validate_re($service_ensure, '^running$|^stopped$')
-  validate_re($ipmievd_service_ensure, '^running$|^stopped$')
-  validate_bool($watchdog)
-
-  validate_hash($snmps)
-  validate_hash($users)
-  validate_hash($networks)
 
   $enable_ipmi = $service_ensure ? {
     'running' => true,
@@ -29,26 +19,18 @@ class ipmi (
     'stopped' => false,
   }
 
-  include ::ipmi::install
-  include ::ipmi::config
-
+  class { 'ipmi::install': } ~>
+  class { 'ipmi::config':  } ~>
   class { '::ipmi::service::ipmi':
     ensure            => $service_ensure,
     enable            => $enable_ipmi,
     ipmi_service_name => $ipmi::params::ipmi_service_name,
-  }
-
+  } ~>
   class { '::ipmi::service::ipmievd':
     ensure => $ipmievd_service_ensure,
     enable => $enable_ipmievd,
   }
 
-  anchor { 'ipmi::begin': }
-  anchor { 'ipmi::end': }
-
-  Anchor['ipmi::begin'] -> Class['::ipmi::install'] ~> Class['::ipmi::config']
-    ~> Class['::ipmi::service::ipmi'] ~> Class['::ipmi::service::ipmievd']
-    -> Anchor['ipmi::end']
 
   if $snmps {
     create_resources('ipmi::snmp', $snmps)
@@ -61,5 +43,4 @@ class ipmi (
   if $networks {
     create_resources('ipmi::network', $networks)
   }
-
 }
